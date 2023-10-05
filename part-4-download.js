@@ -20,16 +20,28 @@ const searchTermCLI = process.argv.length >= 3 ? process.argv[2] : 'Mountains';
         height: 1000,
         deviceScaleFactor: 1,
     });
+
+    // It sets up an event listener for the 'response' event on the page.
+    // When a response is received from a network request, this event listener will be triggered.
     page.on('response', async (resp) => {
+        // extracts the response headers and the URL of the response.
         const headers = resp.headers();
         const url = new URL(resp.url());
+        // It checks if the 'content-type' header includes 'image/avif' and 
+        // if the URL starts with 'https://images.unsplash.com/photo-' and 
+        // if the 'content-length' is greater than 30000 bytes (30KB).
         if (headers['content-type']?.includes('image/avif') && url.href.startsWith('https://images.unsplash.com/photo-') && headers['content-length'] > 30000) {
-        console.log(url.pathname);
-        await resp.buffer().then(async (buffer) => {
-            await writeFile(`./images/${url.pathname}.avif`, buffer, (err) => {
-            if (err) throw err;
+            // If these conditions are met, it logs the URL pathname (the part of the URL after the domain).    
+            console.log(url.pathname);
+            // there will a buffer data inside the response 
+            // It then extracts the binary data from the response using resp.buffer().
+            // It writes this binary data to a file in the './images/' directory with 
+            // a filename based on the URL pathname, appending '.jpg' to it.
+            await resp.buffer().then(async (buffer) => {
+                await writeFile(`./images/${url.pathname}.jpg`, buffer, (error) => {
+                    if (error) throw error;
+                });
             });
-        });
         }
     });
 
@@ -37,10 +49,17 @@ const searchTermCLI = process.argv.length >= 3 ? process.argv[2] : 'Mountains';
     await page.screenshot({ path: './screenshots/download/unsplashhome.jpg' });
     //'input[data-test="nav-bar-search-form-input"]'
     //'button[data-test="nav-bar-search-form-button"]'
-    const btn = await page.waitForSelector('button[data-test="nav-bar-search-form-button"]');
+
+    // waits for the 'button' element with the attribute 'data-test="nav-bar-search-form-button"' to appear.
+    const button = await page.waitForSelector('button[data-test="nav-bar-search-form-button"]');
+    // waits for the 'input' element with the attribute 'data-test="nav-bar-search-form-input"' to appear on the page.
     await page.type('input[data-test="nav-bar-search-form-input"]', searchTermCLI);
 
-    await Promise.all([page.waitForNavigation(), btn.click()]);
+    await Promise.all([
+        page.waitForNavigation(), 
+        button.click(),
+    ]);
+    // waits for the page to navigate and for the network to become idle.
     await page.waitForNetworkIdle();
     await page.screenshot({ path: './screenshots/download/unsplash-search.jpg', fullPage: true });
 
